@@ -1,0 +1,29 @@
+services:
+  mirotalksfu:
+    image: mirotalk/sfu:latest
+    container_name: mirotalksfu
+    hostname: mirotalksfu
+    restart: unless-stopped
+    ports:
+      - '3010:3010/tcp'
+      - '40000-40100:40000-40100/tcp'
+      - '40000-40100:40000-40100/udp'
+    volumes:
+      - ./app/src/config.js:/src/app/src/config.js:ro
+      - ./.env:/src/.env:ro
+      - ./rec:/src/app/rec
+      - ./rtmp:/src/app/rtmp
+    env_file:
+      - .env
+
+  # Node Media Server for RTMP streaming (YouTube, Twitch, etc.)
+  mirotalk-nms:
+    image: mirotalk/nms:latest
+    container_name: mirotalk-nms
+    hostname: mirotalk-nms
+    restart: unless-stopped
+    ports:
+      - '1935:1935/tcp'
+      - '8081:8080/tcp'
+    environment:
+      - RTMP_SECRET=mirotalkRtmpSecret
