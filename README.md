@@ -22,6 +22,90 @@ Lightweight self-hosted video conferencing with RTMP streaming support.
 
 3. **Access:** Open `http://your-server-ip:3010` in a browser.
 
+## Deploy
+
+### Option A: Docker Compose (manual)
+
+1. **Clone and configure:**
+   ```bash
+   git clone git@github.com:dellax/mirotalk.git
+   cd mirotalk
+   cp .env.example .env
+   ```
+
+2. **Edit `.env`** — set at minimum:
+   ```
+   SFU_ANNOUNCED_IP=your-server-public-ip
+   SERVER_HOST_URL=https://meet.yourdomain.com
+   HOST_PROTECTED=true
+   HOST_USER_AUTH=true
+   HOST_USERS=admin:your-strong-password:Admin:*
+   JWT_SECRET=random-string
+   API_KEY_SECRET=random-string
+   RTMP_SECRET=random-string
+   RTMP_API_SECRET=random-string
+   ```
+
+3. **Start:**
+   ```bash
+   mkdir -p rec rtmp
+   docker compose up -d
+   ```
+
+4. **Open firewall ports:**
+   ```bash
+   ufw allow 3010/tcp
+   ufw allow 1935/tcp
+   ufw allow 40000:40100/tcp
+   ufw allow 40000:40100/udp
+   ```
+
+5. **Set up HTTPS** with Caddy (easiest — auto SSL):
+   ```bash
+   apt install caddy
+   ```
+   Add to `/etc/caddy/Caddyfile`:
+   ```
+   meet.yourdomain.com {
+       reverse_proxy localhost:3010
+   }
+   ```
+   ```bash
+   systemctl restart caddy
+   ```
+
+6. **Point DNS** A record → your server IP
+
+7. **Open** `https://meet.yourdomain.com`
+
+### Option B: Dokploy
+
+1. In Dokploy UI → **Projects** → **Create Project**
+2. Add a new **Compose** service
+3. Source: **GitHub** → select `dellax/mirotalk`
+4. Dokploy picks up `docker-compose.yml` automatically
+5. In service settings → **Environment**, add your `.env` variables:
+   ```
+   SFU_ANNOUNCED_IP=your-server-public-ip
+   SERVER_HOST_URL=https://meet.yourdomain.com
+   HOST_PROTECTED=true
+   HOST_USER_AUTH=true
+   HOST_USERS=admin:your-strong-password:Admin:*
+   JWT_SECRET=random-string
+   API_KEY_SECRET=random-string
+   RTMP_SECRET=random-string
+   RTMP_API_SECRET=random-string
+   ```
+6. In **Domains** → add `meet.yourdomain.com`, port `3010`
+   - Dokploy handles SSL automatically via Traefik
+7. **Open firewall** for media ports (Traefik won't proxy UDP):
+   ```bash
+   ufw allow 1935/tcp
+   ufw allow 40000:40100/tcp
+   ufw allow 40000:40100/udp
+   ```
+8. Push to `main` → Dokploy redeploys automatically
+
 ## Admin / Host Controls
 
 MiroTalk SFU has built-in admin features — no extra services needed.
